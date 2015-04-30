@@ -75,9 +75,9 @@ declare module AceAjax {
 
         onTextInput(text);
     }
-    var KeyBinding: {
-        new(editor: Editor): KeyBinding;
-    }
+    // var KeyBinding: {
+    //    new(editor: Editor): KeyBinding;
+    // }
 
     export interface TextMode {
 
@@ -184,15 +184,15 @@ declare module AceAjax {
         **/
         detach();
     }
-    var Anchor: {
+    // var Anchor: {
         /**
          * Creates a new `Anchor` and associates it with a document.
          * @param doc The document to associate with the anchor
          * @param row The starting row position
          * @param column The starting column position
         **/
-        new(doc: Document, row: number, column: number): Anchor;
-    }
+    //    new(doc: Document, row: number, column: number): Anchor;
+    // }
 
     ////////////////////////////////
     /// BackgroundTokenizer
@@ -248,14 +248,14 @@ declare module AceAjax {
         **/
         getState(row: number): string;
     }
-    var BackgroundTokenizer: {
+    // var BackgroundTokenizer: {
         /**
          * Creates a new `BackgroundTokenizer` object.
          * @param tokenizer The tokenizer to use
          * @param editor The editor to associate with
         **/
-        new(tokenizer: Tokenizer, editor: Editor): BackgroundTokenizer;
-    }
+    //    new(tokenizer: Tokenizer, editor: Editor): BackgroundTokenizer;
+    // }
 
     ////////////////
     /// Document
@@ -435,18 +435,18 @@ declare module AceAjax {
         **/
         positionToIndex(pos: Position, startRow: number): number;
     }
-    var Document: {
+    // var Document: {
         /**
          * Creates a new `Document`. If `text` is included, the `Document` contains those strings; otherwise, it's empty.
          * @param text The starting text
         **/
-        new(text?: string): Document;
+    //    new(text?: string): Document;
         /**
          * Creates a new `Document`. If `text` is included, the `Document` contains those strings; otherwise, it's empty.
          * @param text The starting text
         **/
-        new(text?: string[]): Document;
-    }
+    //    new(text?: string[]): Document;
+    // }
 
     ////////////////////////////////
     /// EditSession
@@ -1011,18 +1011,18 @@ declare module AceAjax {
         **/
         getScreenLength(): number;
     }
-    var EditSession: {
+    // var EditSession: {
         /**
          * Sets up a new `EditSession` and associates it with the given `Document` and `TextMode`.
          * @param text [If `text` is a `Document`, it associates the `EditSession` with it. Otherwise, a new `Document` is created, with the initial text]{: #textParam}
          * @param mode [The inital language mode to use for the document]{: #modeParam}
         **/
-        new(text: string, mode?: TextMode): IEditSession;
+    //    new(text: string, mode?: TextMode): IEditSession;
 
-        new(content: string, mode?: string): IEditSession;
+    //    new(content: string, mode?: string): IEditSession;
 
-        new (text: string[], mode?: string): IEditSession;
-    }
+    //    new (text: string[], mode?: string): IEditSession;
+    // }
 
     ////////////////////////////////
     /// Editor
@@ -1702,14 +1702,14 @@ declare module AceAjax {
 
     }
 
-    var Editor: {
+    // var Editor: {
         /**
          * Creates a new `Editor` object.
          * @param renderer Associated `VirtualRenderer` that draws everything
          * @param session The `EditSession` to refer to
         **/
-        new(renderer: VirtualRenderer, session?: IEditSession): Editor;
-    }
+    //    new(renderer: VirtualRenderer, session?: IEditSession): Editor;
+    // }
 
     ////////////////////////////////
     /// PlaceHolder
@@ -1761,7 +1761,7 @@ declare module AceAjax {
         **/
         cancel();
     }
-    var PlaceHolder: {
+    // var PlaceHolder: {
         /**
          * - @param session (Document): The document to associate with the anchor
          * - @param length (Number): The starting row position
@@ -1770,10 +1770,10 @@ declare module AceAjax {
          * - @param mainClass (String):
          * - @param othersClass (String):
         **/
-        new (session: Document, length: number, pos: number, others: string, mainClass: string, othersClass: string): PlaceHolder;
+    //    new (session: Document, length: number, pos: number, others: string, mainClass: string, othersClass: string): PlaceHolder;
 
-        new (session: IEditSession, length: number, pos: Position, positions: Position[]): PlaceHolder;
-    }
+    //    new (session: IEditSession, length: number, pos: Position, positions: Position[]): PlaceHolder;
+    // }
 
     ////////////////
     /// RangeList
@@ -1792,9 +1792,9 @@ declare module AceAjax {
 
         substractPoint(pos: Position);
     }
-    export var RangeList: {
-        new (): IRangeList;
-    }
+    // export var RangeList: {
+    //    new (): IRangeList;
+    // }
 
     ////////////////
     /// Range
@@ -1995,19 +1995,19 @@ declare module AceAjax {
      * @param endRow The ending row
      * @param endColumn The ending column
     **/
-    var Range: {
-        fromPoints(pos1: Position, pos2: Position): Range;
-        new(startRow: number, startColumn: number, endRow: number, endColumn: number): Range;
-    }
+    // var Range: {
+    //    fromPoints(pos1: Position, pos2: Position): Range;
+    //    new(startRow: number, startColumn: number, endRow: number, endColumn: number): Range;
+    // }
 
     ////////////////
     /// RenderLoop
     ////////////////
 
     export interface RenderLoop { }
-    var RenderLoop: {
-        new(): RenderLoop;
-    }
+    // var RenderLoop: {
+    //    new(): RenderLoop;
+    // }
 
     ////////////////
     /// ScrollBar
@@ -2047,13 +2047,13 @@ declare module AceAjax {
         **/
         setScrollTop(scrollTop: number);
     }
-    var ScrollBar: {
+    // var ScrollBar: {
         /**
          * Creates a new `ScrollBar`. `parent` is the owner of the scroll bar.
          * @param parent A DOM element
         **/
-        new(parent: HTMLElement): ScrollBar;
-    }
+    //    new(parent: HTMLElement): ScrollBar;
+    // }
 
     ////////////////
     /// Search
@@ -2102,7 +2102,7 @@ declare module AceAjax {
         **/
         replace(input: string, replacement: string): string;
     }
-    var Search: {
+    // var Search: {
         /**
          * Creates a new `Search` object. The following search options are avaliable:
          * - `needle`: The string or regular expression you're looking for
@@ -2115,8 +2115,8 @@ declare module AceAjax {
          * - `start`: The starting [[Range]] or cursor position to begin the search
          * - `skipCurrent`: Whether or not to include the current line in the search. Default to `false`.
         **/
-        new(): Search;
-    }
+    //    new(): Search;
+    // }
 
     ////////////////
     /// Search
@@ -2371,13 +2371,13 @@ declare module AceAjax {
         **/
         moveCursorToScreen(row: number, column: number, keepDesiredColumn: boolean);
     }
-    var Selection: {
+    // var Selection: {
         /**
          * Creates a new `Selection` object.
          * @param session The session to use
         **/
-        new(session: IEditSession): Selection;
-    }
+    //    new(session: IEditSession): Selection;
+    // }
 
     ////////////////
     /// Split
@@ -2459,9 +2459,9 @@ declare module AceAjax {
         **/
         resize();
     }
-    var Split: {
-        new(): Split;
-    }
+    // var Split: {
+    //    new(): Split;
+    // }
 
     //////////////////
     /// TokenIterator
@@ -2497,15 +2497,15 @@ declare module AceAjax {
         **/
         getCurrentTokenColumn(): number;
     }
-    var TokenIterator: {
+    // var TokenIterator: {
         /**
          * Creates a new token iterator object. The inital token index is set to the provided row and column coordinates.
          * @param session The session to associate with
          * @param initialRow The row to start the tokenizing at
          * @param initialColumn The column to start the tokenizing at
         **/
-        new(session: IEditSession, initialRow: number, initialColumn: number): TokenIterator;
-    }
+    //    new(session: IEditSession, initialRow: number, initialColumn: number): TokenIterator;
+    // }
 
     //////////////////
     /// Tokenizer
@@ -2522,14 +2522,14 @@ declare module AceAjax {
         **/
         getLineTokens(): any;
     }
-    var Tokenizer: {
+    // var Tokenizer: {
         /**
          * Constructs a new tokenizer based on the given rules and flags.
          * @param rules The highlighting rules
          * @param flag Any additional regular expression flags to pass (like "i" for case insensitive)
         **/
-        new(rules: any, flag: string): Tokenizer;
-    }
+    //    new(rules: any, flag: string): Tokenizer;
+    // }
 
     //////////////////
     /// UndoManager
@@ -2576,12 +2576,12 @@ declare module AceAjax {
         hasRedo(): boolean;
 
     }
-    var UndoManager: {
+    // var UndoManager: {
         /**
          * Resets the current undo state and creates a new `UndoManager`.
         **/
-        new(): UndoManager;
-    }
+    //    new(): UndoManager;
+    // }
 
     ////////////////////
     /// VirtualRenderer
@@ -2924,14 +2924,14 @@ declare module AceAjax {
         destroy();
 
     }
-    var VirtualRenderer: {
+    // var VirtualRenderer: {
         /**
          * Constructs a new `VirtualRenderer` within the `container` specified, applying the given `theme`.
          * @param container The root element of the editor
          * @param theme The starting theme
         **/
-        new(container: HTMLElement, theme?: string): VirtualRenderer;
-    }
+    //    new(container: HTMLElement, theme?: string): VirtualRenderer;
+    // }
 }
 
-declare var ace: AceAjax.Ace;
+// declare var ace: AceAjax.Ace;
