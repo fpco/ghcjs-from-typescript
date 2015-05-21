@@ -1,0 +1,51 @@
+name:                ghcjs-ace
+version:             0.0.0
+synopsis:            Bindings to the ace editor
+description:
+license:             BSD3
+license-file:        LICENSE
+author:              FP Complete
+maintainer:          sloan@fpcomplete.com
+copyright:           (c) 2015 FP Complete
+category:            Web
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  exposed-modules:
+                      JavaScript.AceAjax.Raw.Ace
+                      JavaScript.AceAjax.Raw.Anchor
+                      JavaScript.AceAjax.Raw.Annotation
+                      JavaScript.AceAjax.Raw.BackgroundTokenizer
+                      JavaScript.AceAjax.Raw.CommandManager
+                      JavaScript.AceAjax.Raw.Delta
+                      JavaScript.AceAjax.Raw.Document
+                      JavaScript.AceAjax.Raw.Editor
+                      JavaScript.AceAjax.Raw.EditorCommand
+                      JavaScript.AceAjax.Raw.IEditSession
+                      JavaScript.AceAjax.Raw.IRangeList
+                      JavaScript.AceAjax.Raw.KeyBinding
+                      JavaScript.AceAjax.Raw.PlaceHolder
+                      JavaScript.AceAjax.Raw.Position
+                      JavaScript.AceAjax.Raw.Range
+                      JavaScript.AceAjax.Raw.RenderLoop
+                      JavaScript.AceAjax.Raw.ScrollBar
+                      JavaScript.AceAjax.Raw.Search
+                      JavaScript.AceAjax.Raw.Selection
+                      JavaScript.AceAjax.Raw.Split
+                      JavaScript.AceAjax.Raw.TextMode
+                      JavaScript.AceAjax.Raw.TokenInfo
+                      JavaScript.AceAjax.Raw.TokenIterator
+                      JavaScript.AceAjax.Raw.Tokenizer
+                      JavaScript.AceAjax.Raw.Types
+                      JavaScript.AceAjax.Raw.UndoManager
+                      JavaScript.AceAjax.Raw.VirtualRenderer
+  build-depends:      base >= 4 && < 5,
+                      ghcjs-base,
+                      ghcjs-dom
+  default-language:   Haskell2010
+  default-extensions: DeriveDataTypeable
+                      ForeignFunctionInterface
+                      GeneralizedNewtypeDeriving
+                      JavaScriptFFI
