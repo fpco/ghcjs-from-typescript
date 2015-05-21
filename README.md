@@ -21,4 +21,4 @@ Running it on `ace.d.ts`
 
 Here's what I'm currently using to run this:
 
-> rm -r output; runhaskell src/GHCJSFromTypeScript.hs && ghcjs -ioutput output/GHCJS/FFI/AceAjax/Raw/*.hs
+> rm -r output; runhaskell src/GHCJSFromTypeScript.hs && cd ghcjs-ace && cabal --config-file=../../../cabal-ghcjs-config install --ghcjs && cd ..
