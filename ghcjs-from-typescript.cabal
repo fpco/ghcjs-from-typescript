@@ -26,6 +26,7 @@ executable ghcjs-from-typescript
                      , directory
                      , filepath
                      , parsec
-                     , ghcjs-base
+                     , MissingH
+                     , language-typescript
   hs-source-dirs:      src
   default-language:    Haskell2010
