@@ -5,11 +5,11 @@ name:                ghcjs-from-typescript
 version:             0.1.0.0
 -- synopsis:
 -- description:
--- license:
+license:             BSD3
 license-file:        LICENSE
-author:              Callum Rogers
-maintainer:          callumrogers@hotmail.co.uk
--- copyright:
+author:              FP Complete
+maintainer:          sloan@fpcomplete.com
+copyright:           (c) 2015 FP Complete
 category:            Web
 build-type:          Simple
 extra-source-files:  README.md
