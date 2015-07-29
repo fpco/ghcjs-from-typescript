@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module GHCJS.FromTypeScript where
+module Main where
 
 import           Control.Applicative ((<$>))
 import           Control.Lens (makeLenses, over)
