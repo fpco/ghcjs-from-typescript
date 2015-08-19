@@ -15,7 +15,7 @@ and limitations under the License.
 
 declare module "typescript" {
     interface Map<T> {
-        [index: string]: T;
+        // [index: string]: T;
     }
     interface FileMap<T> {
         get(fileName: string): T;
@@ -29,7 +29,7 @@ declare module "typescript" {
         pos: number;
         end: number;
     }
-    const enum SyntaxKind {
+    enum SyntaxKind {
         Unknown = 0,
         EndOfFileToken = 1,
         SingleLineCommentTrivia = 2,
@@ -325,7 +325,7 @@ declare module "typescript" {
         LastBinaryOperator = 66,
         FirstNode = 133,
     }
-    const enum NodeFlags {
+    enum NodeFlags {
         Export = 1,
         Ambient = 2,
         Public = 16,
@@ -347,7 +347,7 @@ declare module "typescript" {
         AccessibilityModifier = 112,
         BlockScoped = 49152,
     }
-    const enum JsxFlags {
+    enum JsxFlags {
         None = 0,
         IntrinsicNamedElement = 1,
         IntrinsicIndexedElement = 2,
@@ -376,8 +376,8 @@ declare module "typescript" {
         left: EntityName;
         right: Identifier;
     }
-    type EntityName = Identifier | QualifiedName;
-    type DeclarationName = Identifier | LiteralExpression | ComputedPropertyName | BindingPattern;
+    // type EntityName = Identifier | QualifiedName;
+    // type DeclarationName = Identifier | LiteralExpression | ComputedPropertyName | BindingPattern;
     interface Declaration extends Node {
         _declarationBrand: any;
         name?: DeclarationName;
@@ -400,7 +400,7 @@ declare module "typescript" {
     }
     interface VariableDeclaration extends Declaration {
         parent?: VariableDeclarationList;
-        name: Identifier | BindingPattern;
+        name: IdentifierOrBindingPattern;
         type?: TypeNode;
         initializer?: Expression;
     }
@@ -409,7 +409,7 @@ declare module "typescript" {
     }
     interface ParameterDeclaration extends Declaration {
         dotDotDotToken?: Node;
-        name: Identifier | BindingPattern;
+        name: IdentifierOrBindingPattern;
         questionToken?: Node;
         type?: TypeNode;
         initializer?: Expression;
@@ -417,7 +417,7 @@ declare module "typescript" {
     interface BindingElement extends Declaration {
         propertyName?: Identifier;
         dotDotDotToken?: Node;
-        name: Identifier | BindingPattern;
+        name: IdentifierOrBindingPattern;
         initializer?: Expression;
     }
     interface PropertyDeclaration extends Declaration, ClassElement {
@@ -462,7 +462,7 @@ declare module "typescript" {
         _functionLikeDeclarationBrand: any;
         asteriskToken?: Node;
         questionToken?: Node;
-        body?: Block | Expression;
+        body?: BlockOrExpression;
     }
     interface FunctionDeclaration extends FunctionLikeDeclaration, Statement {
         name?: Identifier;
@@ -580,7 +580,7 @@ declare module "typescript" {
     }
     interface FunctionExpression extends PrimaryExpression, FunctionLikeDeclaration {
         name?: Identifier;
-        body: Block | Expression;
+        body: BlockOrExpression;
     }
     interface ArrowFunction extends Expression, FunctionLikeDeclaration {
         equalsGreaterThanToken: Node;
@@ -632,9 +632,9 @@ declare module "typescript" {
     }
     interface TaggedTemplateExpression extends MemberExpression {
         tag: LeftHandSideExpression;
-        template: LiteralExpression | TemplateExpression;
+        template: LiteralExpressionOrTemplateExpression;
     }
-    type CallLikeExpression = CallExpression | NewExpression | TaggedTemplateExpression | Decorator;
+    // type CallLikeExpression = CallExpressionOrNewExpressionOrTaggedTemplateExpressionOrDecorator;
     interface AsExpression extends Expression {
         expression: Expression;
         type: TypeNode;
@@ -643,7 +643,7 @@ declare module "typescript" {
         type: TypeNode;
         expression: UnaryExpression;
     }
-    type AssertionExpression = TypeAssertion | AsExpression;
+    // type AssertionExpression = TypeAssertionOrAsExpression;
     interface JsxElement extends PrimaryExpression {
         openingElement: JsxOpeningElement;
         children: NodeArray<JsxChild>;
@@ -652,12 +652,12 @@ declare module "typescript" {
     interface JsxOpeningElement extends Expression {
         _openingElementBrand?: any;
         tagName: EntityName;
-        attributes: NodeArray<JsxAttribute | JsxSpreadAttribute>;
+        attributes: NodeArray<JsxAttributeOrJsxSpreadAttribute>;
     }
     interface JsxSelfClosingElement extends PrimaryExpression, JsxOpeningElement {
         _selfClosingElementBrand?: any;
     }
-    type JsxOpeningLikeElement = JsxSelfClosingElement | JsxOpeningElement;
+    // type JsxOpeningLikeElement = JsxSelfClosingElementOrJsxOpeningElement;
     interface JsxAttribute extends Node {
         name: Identifier;
         initializer?: Expression;
@@ -674,7 +674,7 @@ declare module "typescript" {
     interface JsxText extends Node {
         _jsxTextExpressionBrand: any;
     }
-    type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement;
+    // type JsxChild = JsxTextOrJsxExpressionOrJsxElementOrJsxSelfClosingElement;
     interface Statement extends Node {
         _statementBrand: any;
     }
@@ -702,16 +702,16 @@ declare module "typescript" {
         expression: Expression;
     }
     interface ForStatement extends IterationStatement {
-        initializer?: VariableDeclarationList | Expression;
+        initializer?: VariableDeclarationListOrExpression;
         condition?: Expression;
         incrementor?: Expression;
     }
     interface ForInStatement extends IterationStatement {
-        initializer: VariableDeclarationList | Expression;
+        initializer: VariableDeclarationListOrExpression;
         expression: Expression;
     }
     interface ForOfStatement extends IterationStatement {
-        initializer: VariableDeclarationList | Expression;
+        initializer: VariableDeclarationListOrExpression;
         expression: Expression;
     }
     interface BreakOrContinueStatement extends Statement {
@@ -738,7 +738,7 @@ declare module "typescript" {
     interface DefaultClause extends Node {
         statements: NodeArray<Statement>;
     }
-    type CaseOrDefaultClause = CaseClause | DefaultClause;
+    // type CaseOrDefaultClause = CaseClauseOrDefaultClause;
     interface LabeledStatement extends Statement {
         label: Identifier;
         statement: Statement;
@@ -792,15 +792,15 @@ declare module "typescript" {
         members: NodeArray<EnumMember>;
     }
     interface ModuleDeclaration extends Declaration, Statement {
-        name: Identifier | LiteralExpression;
-        body: ModuleBlock | ModuleDeclaration;
+        name: IdentifierOrLiteralExpression;
+        body: ModuleBlockOrModuleDeclaration;
     }
     interface ModuleBlock extends Node, Statement {
         statements: NodeArray<Statement>;
     }
     interface ImportEqualsDeclaration extends Declaration, Statement {
         name: Identifier;
-        moduleReference: EntityName | ExternalModuleReference;
+        moduleReference: EntityNameOrExternalModuleReference;
     }
     interface ExternalModuleReference extends Node {
         expression?: Expression;
@@ -811,7 +811,7 @@ declare module "typescript" {
     }
     interface ImportClause extends Declaration {
         name?: Identifier;
-        namedBindings?: NamespaceImport | NamedImports;
+        namedBindings?: NamespaceImportOrNamedImports;
     }
     interface NamespaceImport extends Declaration {
         name: Identifier;
@@ -823,14 +823,14 @@ declare module "typescript" {
     interface NamedImportsOrExports extends Node {
         elements: NodeArray<ImportOrExportSpecifier>;
     }
-    type NamedImports = NamedImportsOrExports;
-    type NamedExports = NamedImportsOrExports;
+    // type NamedImports = NamedImportsOrExports;
+    // type NamedExports = NamedImportsOrExports;
     interface ImportOrExportSpecifier extends Declaration {
         propertyName?: Identifier;
         name: Identifier;
     }
-    type ImportSpecifier = ImportOrExportSpecifier;
-    type ExportSpecifier = ImportOrExportSpecifier;
+    // type ImportSpecifier = ImportOrExportSpecifier;
+    // type ExportSpecifier = ImportOrExportSpecifier;
     interface ExportAssignment extends Declaration, Statement {
         isExportEquals?: boolean;
         expression: Expression;
@@ -893,7 +893,7 @@ declare module "typescript" {
         type: JSDocType;
     }
     interface JSDocRecordMember extends PropertyDeclaration {
-        name: Identifier | LiteralExpression;
+        name: IdentifierOrLiteralExpression;
         type?: JSDocType;
     }
     interface JSDocComment extends Node {
@@ -918,15 +918,16 @@ declare module "typescript" {
         postParameterName?: Identifier;
         isBracketed: boolean;
     }
+    class AmdDependency {
+        path: string;
+        name: string;
+    }
     interface SourceFile extends Declaration {
         statements: NodeArray<Statement>;
         endOfFileToken: Node;
         fileName: string;
         text: string;
-        amdDependencies: {
-            path: string;
-            name: string;
-        }[];
+        amdDependencies: AmdDependency[];
         moduleName: string;
         referencedFiles: FileReference[];
         languageVariant: LanguageVariant;
@@ -950,7 +951,7 @@ declare module "typescript" {
         readDirectory(rootDir: string, extension: string, exclude: string[]): string[];
     }
     interface WriteFileCallback {
-        (fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void): void;
+        // (fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void): void;
     }
     class OperationCanceledException {
     }
@@ -1055,8 +1056,8 @@ declare module "typescript" {
         isImplementationOfOverload(node: FunctionLikeDeclaration): boolean;
         isUndefinedSymbol(symbol: Symbol): boolean;
         isArgumentsSymbol(symbol: Symbol): boolean;
-        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): number;
-        isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName, propertyName: string): boolean;
+        getConstantValue(node: EnumMemberOrPropertyAccessExpressionOrElementAccessExpression): number;
+        isValidPropertyAccess(node: PropertyAccessExpressionOrQualifiedName, propertyName: string): boolean;
         getAliasedSymbol(symbol: Symbol): Symbol;
         getExportsOfModule(moduleSymbol: Symbol): Symbol[];
         getJsxElementAttributesType(elementNode: JsxOpeningLikeElement): Type;
@@ -1088,7 +1089,7 @@ declare module "typescript" {
         clear(): void;
         trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
     }
-    const enum TypeFormatFlags {
+    enum TypeFormatFlags {
         None = 0,
         WriteArrayAsGenericType = 1,
         UseTypeOfFunction = 2,
@@ -1099,7 +1100,7 @@ declare module "typescript" {
         InElementType = 64,
         UseFullyQualifiedType = 128,
     }
-    const enum SymbolFormatFlags {
+    enum SymbolFormatFlags {
         None = 0,
         WriteTypeParametersOrArguments = 1,
         UseOnlyExternalAliasing = 2,
@@ -1109,7 +1110,7 @@ declare module "typescript" {
         parameterIndex: number;
         type: Type;
     }
-    const enum SymbolFlags {
+    enum SymbolFlags {
         None = 0,
         FunctionScopedVariable = 1,
         BlockScopedVariable = 2,
@@ -1184,9 +1185,9 @@ declare module "typescript" {
         exports?: SymbolTable;
     }
     interface SymbolTable {
-        [index: string]: Symbol;
+        // [index: string]: Symbol;
     }
-    const enum TypeFlags {
+    enum TypeFlags {
         Any = 1,
         String = 2,
         Number = 4,
@@ -1254,7 +1255,7 @@ declare module "typescript" {
     interface TypeParameter extends Type {
         constraint: Type;
     }
-    const enum SignatureKind {
+    enum SignatureKind {
         Call = 0,
         Construct = 1,
     }
@@ -1264,7 +1265,7 @@ declare module "typescript" {
         parameters: Symbol[];
         typePredicate?: TypePredicate;
     }
-    const enum IndexKind {
+    enum IndexKind {
         String = 0,
         Number = 1,
     }
@@ -1289,7 +1290,7 @@ declare module "typescript" {
         file: SourceFile;
         start: number;
         length: number;
-        messageText: string | DiagnosticMessageChain;
+        messageText: stringOrDiagnosticMessageChain;
         category: DiagnosticCategory;
         code: number;
     }
@@ -1336,21 +1337,21 @@ declare module "typescript" {
         experimentalDecorators?: boolean;
         experimentalAsyncFunctions?: boolean;
         emitDecoratorMetadata?: boolean;
-        [option: string]: string | number | boolean;
+        // [option: string]: stringOrnumberOrboolean;
     }
-    const enum ModuleKind {
+    enum ModuleKind {
         None = 0,
         CommonJS = 1,
         AMD = 2,
         UMD = 3,
         System = 4,
     }
-    const enum JsxEmit {
+    enum JsxEmit {
         None = 0,
         Preserve = 1,
         React = 2,
     }
-    const enum NewLineKind {
+    enum NewLineKind {
         CarriageReturnLineFeed = 0,
         LineFeed = 1,
     }
@@ -1358,13 +1359,13 @@ declare module "typescript" {
         line: number;
         character: number;
     }
-    const enum ScriptTarget {
+    enum ScriptTarget {
         ES3 = 0,
         ES5 = 1,
         ES6 = 2,
         Latest = 2,
     }
-    const enum LanguageVariant {
+    enum LanguageVariant {
         Standard = 0,
         JSX = 1,
     }
@@ -1381,7 +1382,7 @@ declare module "typescript" {
         resolvedFileName: string;
         failedLookupLocations: string[];
     }
-    type ModuleNameResolver = (moduleName: string, containingFile: string, options: CompilerOptions, host: ModuleResolutionHost) => ResolvedModule;
+    // type ModuleNameResolver = (moduleName: string, containingFile: string, options: CompilerOptions, host: ModuleResolutionHost) => ResolvedModule;
     interface CompilerHost extends ModuleResolutionHost {
         getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile;
         getCancellationToken?(): CancellationToken;
@@ -1428,7 +1429,7 @@ declare module "typescript" {
 }
 declare module "typescript" {
     interface ErrorCallback {
-        (message: DiagnosticMessage, length: number): void;
+        // (message: DiagnosticMessage, length: number): void;
     }
     interface Scanner {
         getStartPos(): number;
@@ -1489,7 +1490,7 @@ declare module "typescript" {
     function textChangeRangeNewSpan(range: TextChangeRange): TextSpan;
     function textChangeRangeIsUnchanged(range: TextChangeRange): boolean;
     function createTextChangeRange(span: TextSpan, newLength: number): TextChangeRange;
-    let unchangedTextChangeRange: TextChangeRange;
+    // let unchangedTextChangeRange: TextChangeRange;
     /**
      * Called to merge all the changes that occurred across several versions of a script snapshot
      * into a single change.  i.e. if a user keeps making successive edits to a script we will
@@ -1509,13 +1510,13 @@ declare module "typescript" {
     function updateSourceFile(sourceFile: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks?: boolean): SourceFile;
 }
 declare module "typescript" {
-    const version: string;
+    var version: string;
     function findConfigFile(searchPath: string): string;
     function resolveTripleslashReference(moduleName: string, containingFile: string): string;
     function resolveModuleName(moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost): ResolvedModule;
     function createCompilerHost(options: CompilerOptions, setParentNodes?: boolean): CompilerHost;
     function getPreEmitDiagnostics(program: Program, sourceFile?: SourceFile, cancellationToken?: CancellationToken): Diagnostic[];
-    function flattenDiagnosticMessageText(messageText: string | DiagnosticMessageChain, newLine: string): string;
+    function flattenDiagnosticMessageText(messageText: stringOrDiagnosticMessageChain, newLine: string): string;
     function createProgram(rootNames: string[], options: CompilerOptions, host?: CompilerHost, oldProgram?: Program): Program;
 }
 declare module "typescript" {
@@ -1547,7 +1548,7 @@ declare module "typescript" {
 }
 declare module "typescript" {
     /** The version of the language service API */
-    let servicesVersion: string;
+    var servicesVersion: string;
     interface Node {
         getSourceFile(): SourceFile;
         getChildCount(sourceFile?: SourceFile): number;
@@ -1740,10 +1741,10 @@ declare module "typescript" {
         highlightSpans: HighlightSpan[];
     }
     module HighlightSpanKind {
-        const none: string;
-        const definition: string;
-        const reference: string;
-        const writtenReference: string;
+        var none: string;
+        var definition: string;
+        var reference: string;
+        var writtenReference: string;
     }
     interface HighlightSpan {
         fileName?: string;
@@ -1777,7 +1778,7 @@ declare module "typescript" {
         InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: boolean;
         PlaceOpenBraceOnNewLineForFunctions: boolean;
         PlaceOpenBraceOnNewLineForControlBlocks: boolean;
-        [s: string]: boolean | number | string;
+        // [s: string]: booleanOrnumberOrstring;
     }
     interface DefinitionInfo {
         fileName: string;
@@ -1901,7 +1902,7 @@ declare module "typescript" {
         outputFiles: OutputFile[];
         emitSkipped: boolean;
     }
-    const enum OutputFileType {
+    enum OutputFileType {
         JavaScript = 0,
         SourceMap = 1,
         Declaration = 2,
@@ -1911,7 +1912,7 @@ declare module "typescript" {
         writeByteOrderMark: boolean;
         text: string;
     }
-    const enum EndOfLineState {
+    enum EndOfLineState {
         None = 0,
         InMultiLineCommentTrivia = 1,
         InSingleQuoteStringLiteral = 2,
@@ -2020,45 +2021,45 @@ declare module "typescript" {
         reportStats(): string;
     }
     module ScriptElementKind {
-        const unknown: string;
-        const warning: string;
-        const keyword: string;
-        const scriptElement: string;
-        const moduleElement: string;
-        const classElement: string;
-        const localClassElement: string;
-        const interfaceElement: string;
-        const typeElement: string;
-        const enumElement: string;
-        const variableElement: string;
-        const localVariableElement: string;
-        const functionElement: string;
-        const localFunctionElement: string;
-        const memberFunctionElement: string;
-        const memberGetAccessorElement: string;
-        const memberSetAccessorElement: string;
-        const memberVariableElement: string;
-        const constructorImplementationElement: string;
-        const callSignatureElement: string;
-        const indexSignatureElement: string;
-        const constructSignatureElement: string;
-        const parameterElement: string;
-        const typeParameterElement: string;
-        const primitiveType: string;
-        const label: string;
-        const alias: string;
-        const constElement: string;
-        const letElement: string;
+        var unknown: string;
+        var warning: string;
+        var keyword: string;
+        var scriptElement: string;
+        var moduleElement: string;
+        var classElement: string;
+        var localClassElement: string;
+        var interfaceElement: string;
+        var typeElement: string;
+        var enumElement: string;
+        var variableElement: string;
+        var localVariableElement: string;
+        var functionElement: string;
+        var localFunctionElement: string;
+        var memberFunctionElement: string;
+        var memberGetAccessorElement: string;
+        var memberSetAccessorElement: string;
+        var memberVariableElement: string;
+        var constructorImplementationElement: string;
+        var callSignatureElement: string;
+        var indexSignatureElement: string;
+        var constructSignatureElement: string;
+        var parameterElement: string;
+        var typeParameterElement: string;
+        var primitiveType: string;
+        var label: string;
+        var alias: string;
+        var constElement: string;
+        var letElement: string;
     }
     module ScriptElementKindModifier {
-        const none: string;
-        const publicMemberModifier: string;
-        const privateMemberModifier: string;
-        const protectedMemberModifier: string;
-        const exportedModifier: string;
-        const ambientModifier: string;
-        const staticModifier: string;
-        const abstractModifier: string;
+        var none: string;
+        var publicMemberModifier: string;
+        var privateMemberModifier: string;
+        var protectedMemberModifier: string;
+        var exportedModifier: string;
+        var ambientModifier: string;
+        var staticModifier: string;
+        var abstractModifier: string;
     }
     class ClassificationTypeNames {
         static comment: string;
@@ -2079,7 +2080,7 @@ declare module "typescript" {
         static parameterName: string;
         static docCommentTagName: string;
     }
-    const enum ClassificationType {
+    enum ClassificationType {
         comment = 1,
         identifier = 2,
         keyword = 3,
@@ -2119,7 +2120,7 @@ declare module "typescript" {
     function transpileModule(input: string, transpileOptions: TranspileOptions): TranspileOutput;
     function transpile(input: string, compilerOptions?: CompilerOptions, fileName?: string, diagnostics?: Diagnostic[], moduleName?: string): string;
     function createLanguageServiceSourceFile(fileName: string, scriptSnapshot: IScriptSnapshot, scriptTarget: ScriptTarget, version: string, setNodeParents: boolean): SourceFile;
-    let disableIncrementalParsing: boolean;
+    var disableIncrementalParsing: boolean;
     function updateLanguageServiceSourceFile(sourceFile: SourceFile, scriptSnapshot: IScriptSnapshot, version: string, textChangeRange: TextChangeRange, aggressiveChecks?: boolean): SourceFile;
     function createGetCanonicalFileName(useCaseSensitivefileNames: boolean): (fileName: string) => string;
     function createDocumentRegistry(useCaseSensitiveFileNames?: boolean): DocumentRegistry;
