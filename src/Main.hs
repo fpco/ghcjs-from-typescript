@@ -8,7 +8,7 @@ import           Control.Applicative ((<$>))
 import           Control.Lens (makeLenses, over)
 import           Control.Monad (when)
 import           Control.Monad.State.Strict hiding (forM_)
-import           Data.Char (isAlpha, toLower)
+import           Data.Char (isAlpha, toLower, toUpper)
 import           Data.Foldable (forM_)
 import           Data.List (intercalate)
 import qualified Data.Map as M
@@ -44,13 +44,13 @@ emptyOutput = Output
 main :: IO ()
 main = do
   let config = Config
-        { outputDir = "ghcjs-ace"
-        , extraImports = ["import GHCJS.DOM.Types (HTMLElement)"]
+        { outputDir = "ghcjs-typescript"
+        , extraImports = []
         , rewriteTypes = defaultRewriteTypes
         }
-  output <- ghcjsFromTypeScript "ace.d.ts" config
+  output <- ghcjsFromTypeScript "typescript.d.ts" config
   writeCabalFile config output
-  copyFile "LICENSE" "ghcjs-ace/LICENSE"
+  copyFile "LICENSE" "ghcjs-typescript/LICENSE"
 
 ghcjsFromTypeScript :: FilePath -> Config -> IO Output
 ghcjsFromTypeScript fp config = do
@@ -76,9 +76,33 @@ processAmbientDeclaration config mn (AmbientModuleDeclaration _ names decls) = d
   let prefix = mn <> ModuleName names
   startModule config (prefix <> ModuleName ["Raw", "Types"])
   mapM_ (processAmbientDeclaration config prefix) decls
+processAmbientDeclaration config mn (AmbientExternalModuleDeclaration _ name xs) = do
+  let prefix = mn <> ModuleName [capitalize name]
+      go (AmbientModuleElement ambient) = processAmbientDeclaration config prefix ambient
+      go x = notSupported x
+  startModule config (prefix <> ModuleName ["Raw", "Types"])
+  mapM_ go xs
 processAmbientDeclaration config mn (AmbientInterfaceDeclaration iface) =
   processInterface config mn iface
-processAmbientDeclaration _ _ x = notSupported x
+processAmbientDeclaration config mn (AmbientEnumDeclaration _ _ xs) =
+  --FIXME: pattern synonym based output
+  return ()
+processAmbientDeclaration config mn (AmbientClassDeclaration cp name typarams tyrefs1 tyrefs2 body) =
+  --TODO: what are tyrefs1 / tyrefs2?
+  processInterface config mn $
+    Interface cp name typarams tyrefs1 (TypeBody (map (\(cp, cbe) -> (cp, classBodyElementToTypeMember cbe)) body))
+-- processAmbientDeclaration config mn (AmbientVariableDeclaration _ name ty) =
+processAmbientDeclaration _ _ x = skip x
+
+classBodyElementToTypeMember :: AmbientClassBodyElement -> TypeMember
+classBodyElementToTypeMember (AmbientConstructorDeclaration params) =
+  ConstructSignature Nothing params Nothing
+classBodyElementToTypeMember (AmbientMemberDeclaration mpublicOrPrivate mstatic name fieldOrFunc) =
+  case fieldOrFunc of
+    Left field -> PropertySignature name Nothing field
+    Right func -> MethodSignature name Nothing func
+classBodyElementToTypeMember (AmbientIndexSignature indexSig) =
+  TypeIndexSignature indexSig
 
 processInterface :: Config -> ModuleName -> Interface -> M ()
 processInterface config prefix (Interface _ name typeParams typeRefs body) = do
@@ -98,7 +122,7 @@ processInterface config prefix (Interface _ name typeParams typeRefs body) = do
           ("$1." ++ field)
           (hsName ++ " :: " ++ name ++ " -> IO (" ++ renderType config (maybeAny mtyp) ++ ")")
       --TODO: handle optional
-      MethodSignature field optional (ParameterListAndReturnType Nothing params mresult) ->
+      MethodSignature field optional (ParameterListAndReturnType _ params mresult) ->
         foreignImport
           config
           mn
@@ -128,6 +152,7 @@ getMembers (TypeBody xs) =
           Just ix -> addMethod (sanitizeName field ++ show ix) (M.insert field (ix + 1) mp)
       where
         addMethod name mp' = (name, x) : go mp' xs
+    -- go mp ((_ , x@(TypeIndexSignature name input result))) =
     go _ (x:xs) = notSupported x
 
 --FIXME: Removing special chars can cause names to alias.
@@ -226,8 +251,13 @@ renderParamType config (RequiredOrOptionalParameter Nothing _ _ mtyp) =
 renderParamType _ x = notSupported x
 
 renderTypeRef :: Config -> TypeRef -> String
-renderTypeRef config (TypeRef name Nothing) = renderTypeName config name
-renderTypeRef _ x = notSupported x
+renderTypeRef config (TypeRef name Nothing) =
+    renderTypeName config name
+renderTypeRef config (TypeRef name (Just params)) =
+    "(" ++
+    renderTypeName config name ++
+    concatMap (\ty -> " (" ++ renderType config ty ++ ")") params ++
+    ")"
 
 renderTypeName :: Config -> TypeName -> String
 renderTypeName config (TypeName Nothing name) = name
@@ -250,14 +280,14 @@ startModule :: Config -> ModuleName -> M ()
 startModule config mn = do
   let path = modulePath config mn
   exists <- liftIO $ doesFileExist path
-  when exists $ fail $ path ++ " already exists."
-  appendOutput config mn $ unlines $
-    [ "module " ++ renderModuleName mn ++ " where"
-    , "import qualified GHCJS.Types as GHCJS"
-    , "import qualified GHCJS.Marshal as GHCJS"
-    , "import qualified Data.Typeable"
-    , "import GHCJS.FFI.TypeScript"
-    ] ++ extraImports config
+  unless exists $
+    appendOutput config mn $ unlines $
+      [ "module " ++ renderModuleName mn ++ " where"
+      , "import qualified GHCJS.Types as GHCJS"
+      , "import qualified GHCJS.Marshal as GHCJS"
+      , "import qualified Data.Typeable"
+      , "import GHCJS.FFI.TypeScript"
+      ] ++ extraImports config
   modify (over outputModules $ S.insert mn)
 
 appendTypes :: Config -> ModuleName -> String -> M ()
@@ -289,6 +319,9 @@ maybeAny = fromMaybe (Predefined AnyType)
 maybeVoid :: Maybe Type -> Type
 maybeVoid = fromMaybe (Predefined VoidType)
 
+skip :: (Show a, MonadIO m) => a -> m ()
+skip x = liftIO $ putStrLn $ "Skipping " ++ show x
+
 notSupported :: (Show a, Typeable a) => a -> b
 notSupported x = error $ show (typeOf x) ++ " not yet supported: " ++ show x
 
@@ -304,6 +337,10 @@ renderModuleName (ModuleName xs) = intercalate "." xs
 
 moduleNamePath :: ModuleName -> FilePath
 moduleNamePath (ModuleName xs) = intercalate "/" xs ++ ".hs"
+
+capitalize :: String -> String
+capitalize [] = []
+capitalize (c:xs) = toUpper c : xs
 
 addTypeScriptModule :: Config -> M ()
 addTypeScriptModule config = do
