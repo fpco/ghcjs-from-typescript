@@ -17,7 +17,12 @@ cabal-version:       >=1.10
 
 executable ghcjs-from-typescript
   main-is:             Main.hs
-  -- other-modules:
+  other-modules:       GHCJS.FromTypeScript.Util
+                       GHCJS.FromTypeScript.Types
+                       GHCJS.FromTypeScript.Collect
+                       GHCJS.FromTypeScript.Munge
+                       GHCJS.FromTypeScript.Render
+                       GHCJS.FromTypeScript
   other-extensions:    RecordWildCards, TemplateHaskell, StandaloneDeriving
   build-depends:       base == 4.*
                      , lens

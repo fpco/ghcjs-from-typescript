@@ -1,6 +1,7 @@
 flags: {}
 packages:
   - '.'
+  - deps/language-typescript
 extra-deps:
   - language-typescript-0.0.4
 resolver: lts-2.14

@@ -1,0 +1,3 @@
+[submodule "deps/language-typescript"]
+	path = deps/language-typescript
+	url = git://github.com/mgsloan/language-typescript.git
