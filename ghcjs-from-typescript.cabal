@@ -15,15 +15,14 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
-executable ghcjs-from-typescript
-  main-is:             Main.hs
-  other-modules:       GHCJS.FromTypeScript.Util
+library
+  exposed-modules:     GHCJS.FromTypeScript.Util
                        GHCJS.FromTypeScript.Types
                        GHCJS.FromTypeScript.Collect
                        GHCJS.FromTypeScript.Munge
                        GHCJS.FromTypeScript.Render
                        GHCJS.FromTypeScript
-  other-extensions:    RecordWildCards, TemplateHaskell, StandaloneDeriving
+  other-extensions:    RecordWildCards, TemplateHaskell, StandaloneDeriving, TupleSections
   build-depends:       base == 4.*
                      , lens
                      , mtl
@@ -35,3 +34,14 @@ executable ghcjs-from-typescript
                      , language-typescript
   hs-source-dirs:      src
   default-language:    Haskell2010
+  ghc-options:         -Wall
+
+test-suite definitely-typed
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             definitely-typed.hs
+  ghc-options:         -Wall
+  build-depends:       base == 4.*
+                     , filepath
+                     , directory
+                     , ghcjs-from-typescript

@@ -3,5 +3,5 @@ packages:
   - '.'
   - deps/language-typescript
 extra-deps:
-  - language-typescript-0.0.4
+  - unicode-properties-3.2.0.0
 resolver: lts-2.14

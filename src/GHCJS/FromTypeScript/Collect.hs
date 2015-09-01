@@ -2,6 +2,7 @@ module GHCJS.FromTypeScript.Collect (collect) where
 
 import qualified Data.Map as M
 import           Data.Monoid
+import           GHCJS.FromTypeScript.Munge
 import           GHCJS.FromTypeScript.Types
 import           GHCJS.FromTypeScript.Util
 import           Language.TypeScript
@@ -35,7 +36,7 @@ collectDeclarationElement (AmbientDeclaration _ _ ambient) =
 collectDeclarationElement (InterfaceDeclaration _ _ iface) =
   [collectInterface (ModuleName []) iface]
 collectDeclarationElement x =
-  notSupported x
+  skip x
 
 collectAmbientDeclaration :: ModuleName -> Ambient -> [(ModuleName, Decl)]
 collectAmbientDeclaration mn (AmbientModuleDeclaration _ names decls) =
@@ -53,7 +54,7 @@ collectAmbientDeclaration _ x = skip x
 collectAmbientExternalModuleElement :: ModuleName -> AmbientExternalModuleElement -> [(ModuleName, Decl)]
 collectAmbientExternalModuleElement mn (AmbientModuleElement ambient) =
   collectAmbientDeclaration mn ambient
-collectAmbientExternalModuleElement _ x = notSupported x
+collectAmbientExternalModuleElement _ x = skip x
 
 -- TODO: revisit spec - I'm thinking the interface for a class doesn't
 -- have the class's constructor.

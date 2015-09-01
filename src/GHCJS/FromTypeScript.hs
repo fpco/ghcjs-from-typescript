@@ -1,13 +1,14 @@
 module GHCJS.FromTypeScript where
 
 import GHCJS.FromTypeScript.Collect (collect)
+import GHCJS.FromTypeScript.Munge
 import GHCJS.FromTypeScript.Render (render)
 import GHCJS.FromTypeScript.Types
 import GHCJS.FromTypeScript.Util
 import Language.TypeScript
-import Text.Parsec (parse)
-import System.FilePath ((</>), takeDirectory)
 import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((</>), takeDirectory)
+import Text.Parsec (parse)
 
 ghcjsFromTypeScript :: Config -> FilePath -> IO ()
 ghcjsFromTypeScript config fp = do
@@ -42,6 +43,7 @@ pragmas =
   , "{-# LANGUAGE GeneralizedNewtypeDeriving #-}"
   , "{-# LANGUAGE PolyKinds                  #-}"
   , "{-# LANGUAGE UndecidableInstances       #-}"
+  , "{-# LANGUAGE DatatypeContexts           #-}"
   ]
 
 defaultConfig :: FilePath -> Config

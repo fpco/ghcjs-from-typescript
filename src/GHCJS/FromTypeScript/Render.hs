@@ -1,10 +1,13 @@
+{-# LANGUAGE TupleSections #-}
 module GHCJS.FromTypeScript.Render (render) where
 
 import           Control.Applicative ((<$>))
 import           Data.List (intercalate)
 import qualified Data.Map as M
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (fromMaybe, mapMaybe)
 import           Data.Monoid (Monoid(..), (<>))
+import           Debug.Trace (trace)
+import           GHCJS.FromTypeScript.Munge
 import           GHCJS.FromTypeScript.Types
 import           GHCJS.FromTypeScript.Util
 import           Language.TypeScript.Types
@@ -19,9 +22,9 @@ render =
   M.toList
 
 renderDecl :: Decl -> [String]
-renderDecl (InterfaceDecl (Interface _ name mparams mextends body)) =
+renderDecl (InterfaceDecl (Interface _ name mtparams mextends body)) =
     [ ""
-    , "newtype " ++ ty ++ " = " ++ name ++ " (GHCJS.JSRef (" ++ ty ++ "))"
+    , "newtype " ++ ctxt ++ ty ++ " = " ++ munged ++ " (GHCJS.JSRef (" ++ ty ++ "))"
     , "  deriving (Data.Typeable.Typeable, GHCJS.ToJSRef, GHCJS.FromJSRef)"
     , "type instance TS.Members " ++ ty ++ " =" ++
       case mextends of
@@ -29,10 +32,12 @@ renderDecl (InterfaceDecl (Interface _ name mparams mextends body)) =
         Just extends -> " TS.Extends '[" ++ intercalate ", " (map renderTypeRef extends) ++ "]"
     ] ++ renderTypeBody ty body
   where
-    ty = name ++
-      case mparams of
+    ctxt = maybe "" renderTypeParametersContext mtparams
+    munged = mungeUpperName name
+    ty = munged ++
+      case mtparams of
         Nothing -> ""
-        Just params -> " " <> intercalate " " (map renderTypeParameter params)
+        Just params -> " " <> intercalate " " (map renderTypeParameterName params)
 
 renderTypeBody :: String -> TypeBody -> [String]
 renderTypeBody ty (TypeBody members) =
@@ -129,9 +134,12 @@ renderType ty = case ty of
   TupleType ts -> "(" ++ intercalate ", " (map renderType ts) ++ ")"
   FunctionType mtparams params result ->
     "(" ++ renderFunctionType mtparams params (renderType result) ++ ")"
-  -- FIXME: should this be distinguished?
   ConstructorType mtparams params result ->
-    renderFunctionType mtparams params (renderType result)
+    "TS.Object '[ '( 'TS.Constructor, " ++
+    renderFunctionType mtparams params (renderType result) ++
+    " ) ]"
+  tq@(TypeQuery{}) ->
+    trace ("Skipping " ++ show tq) "TS.Any"
 
 renderTypeRef :: TypeRef -> String
 renderTypeRef (TypeRef name Nothing) =
@@ -143,24 +151,42 @@ renderTypeRef (TypeRef name (Just params)) =
     ")"
 
 renderTypeName :: TypeName -> String
-renderTypeName (TypeName Nothing name) = name
-renderTypeName x = notSupported x
+-- FIXME: use module qualification
+renderTypeName (TypeName mn name) = mungeUpperName name
 
 renderFunctionType :: Maybe [TypeParameter] -> [Parameter] -> String -> String
 renderFunctionType Nothing params result =
   concatMap ((++ " -> ") . renderParameter) params ++ result
-renderFunctionType x _ _ = notSupported x
+renderFunctionType (Just tparams) params result =
+  "forall " ++
+  intercalate " " (map (\(TypeParameter name _) -> name) tparams) ++
+  ". " ++
+  renderTypeParametersContext tparams ++
+  renderFunctionType Nothing params result
 
 renderParameter :: Parameter -> String
 renderParameter (RequiredOrOptionalParameter _ _ optional mtype) =
-  renderOptional optional (renderType (maybeAny mtype))
-renderParameter x = notSupported x
+  renderOptional optional (renderParameterType mtype)
+renderParameter (RestParameter _ mtype) =
+  "TS.Rest (" ++ renderType (maybeAny mtype) ++ ")"
+
+renderParameterType :: Maybe ParameterType -> String
+renderParameterType Nothing = renderType (Predefined AnyType)
+renderParameterType (Just (ParameterType ty)) = renderType ty
+renderParameterType (Just (ParameterSpecialized str)) = "TS.Specialize " ++ show str
 
 renderOptional :: Maybe Optional -> String -> String
 renderOptional Nothing xs = xs
 renderOptional (Just Optional) xs = "TS.Optional (" ++ xs ++ ")"
 
--- FIXME: is fancier munging required?
-renderTypeParameter :: TypeParameter -> String
-renderTypeParameter (TypeParameter name Nothing) = decapitalize name
-renderTypeParameter x = notSupported x
+renderTypeParameterName :: TypeParameter -> String
+renderTypeParameterName (TypeParameter name _) = mungeLowerName name
+
+renderTypeParametersContext :: [TypeParameter] -> String
+renderTypeParametersContext tparams =
+  case mapMaybe (\(TypeParameter name mty) -> (name, ) <$> mty) tparams of
+    [] -> ""
+    constraints ->
+      "(" ++
+      intercalate ", " (map (\(name, ty) -> name ++ " := " ++ renderType ty) constraints) ++
+      ") => "

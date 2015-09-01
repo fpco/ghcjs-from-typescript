@@ -1,12 +1,39 @@
-module GHCJS.FromTypeScript.Munge (mungeName) where
+{-# LANGUAGE StandaloneDeriving #-}
 
-import Data.Char (toLower, isAlpha)
+module GHCJS.FromTypeScript.Munge
+  ( mungeLowerName
+  , mungeUpperName
+  , capitalize
+  , decapitalize
+  , renderModuleName
+  , moduleNamePath
+  ) where
+
+import Data.Char (toUpper, toLower, isAlpha)
+import Data.List (intercalate)
+import Data.Monoid
+import Data.Typeable
+import Language.TypeScript
+
+mungeLowerName :: String -> String
+mungeLowerName = decapitalize . mungeName
+
+mungeUpperName :: String -> String
+mungeUpperName = capitalize . mungeName
+
+capitalize :: String -> String
+capitalize [] = []
+capitalize (c:xs) = toUpper c : xs
+
+decapitalize :: String -> String
+decapitalize [] = []
+decapitalize (c:xs) = toLower c : xs
 
 --FIXME: Removing special chars can cause names to alias.
 mungeName :: String -> String
 mungeName = defaultForEmpty . avoidKeywords . onlyValidIdentifiers
   where
-    defaultForEmpty "" = "_defaultForEmpty_"
+    defaultForEmpty "" = "defaultForEmpty_"
     defaultForEmpty x = x
     onlyValidIdentifiers [] = []
     onlyValidIdentifiers (x:xs)
@@ -55,3 +82,18 @@ keywords =
   , "type"
   , "where"
   ]
+
+-- Module name utilities
+
+renderModuleName :: ModuleName -> String
+renderModuleName (ModuleName xs) = intercalate "." (map mungeUpperName xs)
+
+moduleNamePath :: ModuleName -> FilePath
+moduleNamePath (ModuleName xs) = intercalate "/" (map mungeUpperName xs) ++ ".hs"
+
+deriving instance Eq ModuleName
+deriving instance Ord ModuleName
+
+instance Monoid ModuleName where
+    mempty = ModuleName mempty
+    mappend (ModuleName xs) (ModuleName ys) = ModuleName (xs ++ ys)
