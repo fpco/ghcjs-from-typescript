@@ -9,10 +9,13 @@ import GHCJS.FromTypeScript
 import GHCJS.FromTypeScript.Munge (renderModuleName)
 import Language.TypeScript (ModuleName)
 import System.Directory
-import System.FilePath ((</>), (<.>))
+import System.FilePath ((</>), (<.>), takeFileName)
 
 main :: IO ()
 main = do
+  -- Convert type-script lib
+  convert "deps/lib.d.ts"
+  -- Convert all of the definitely typed definition files.
   let root = "deps/DefinitelyTyped"
   dirs <- getDirectoryContents root
   forM_ dirs $ \dir -> do
@@ -23,19 +26,23 @@ main = do
       forM_ files $ \file -> do
         let path' = path </> file
         isFile <- doesFileExist path'
-        when isFile $ forM_ (stripSuffix ".d.ts" file) $ \name -> do
-          putStrLn ""
-          putStrLn path'
-          putStrLn ""
-          let outputDir = "test/output" </> name
-          eres <- try $ ghcjsFromTypeScript (defaultConfig outputDir) path'
-          print (eres :: Either SomeException [ModuleName])
-          case eres of
-            Left _ -> return ()
-            Right [] -> putStrLn "Warning: no output modules"
-            Right modules -> do
-              writeCabalFile outputDir name modules
-              writeStackFile outputDir
+        when isFile (convert path')
+
+convert :: FilePath -> IO ()
+convert path = do
+  forM_ (stripSuffix ".d.ts" (takeFileName path)) $ \name -> do
+    putStrLn ""
+    putStrLn path
+    putStrLn ""
+    let outputDir = "test/output" </> name
+    eres <- try $ ghcjsFromTypeScript (defaultConfig outputDir) path
+    print (eres :: Either SomeException [ModuleName])
+    case eres of
+      Left _ -> return ()
+      Right [] -> putStrLn "Warning: no output modules"
+      Right modules -> do
+        writeCabalFile outputDir name modules
+        writeStackFile outputDir
 
 expectedFailures :: [String]
 expectedFailures =
