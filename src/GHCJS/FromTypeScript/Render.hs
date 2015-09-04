@@ -24,7 +24,7 @@ render =
 renderDecl :: Decl -> [String]
 renderDecl (InterfaceDecl (Interface _ name mtparams mextends body)) =
     [ ""
-    , "newtype " ++ ctxt ++ ty ++ " = " ++ munged ++ " (GHCJS.JSRef (" ++ ty ++ "))"
+    , "newtype " ++ ty ++ " = " ++ munged ++ " (GHCJS.JSRef (" ++ ty ++ "))"
     , "  deriving (Data.Typeable.Typeable, GHCJS.ToJSRef, GHCJS.FromJSRef)"
     , "type instance TS.Members " ++ ty ++ " =" ++
       case mextends of
@@ -32,7 +32,8 @@ renderDecl (InterfaceDecl (Interface _ name mtparams mextends body)) =
         Just extends -> " TS.Extends '[" ++ intercalate ", " (map renderTypeRef extends) ++ "]"
     ] ++ renderTypeBody ty body
   where
-    ctxt = maybe "" renderTypeParametersContext mtparams
+    --FIXME was done with DatatypeContexts
+    -- ctxt = maybe "" renderTypeParametersContext mtparams
     munged = mungeUpperName name
     ty = munged ++
       case mtparams of
@@ -97,16 +98,12 @@ renderPlart (ParameterListAndReturnType mtparams params mreturn) =
 
 standardImports :: [String]
 standardImports =
-  [ "import qualified GHCJS.Types as GHCJS"
-  , "import qualified GHCJS.Marshal as GHCJS"
-  , "import qualified GHCJS.TypeScript.Types as TS"
+  [ "import qualified GHCJS.TypeScript.Types as TS"
   , "import GHCJS.TypeScript.Types ((:|:))"
+  , "import qualified GHCJS.Marshal as GHCJS"
+  , "import qualified GHCJS.Types as GHCJS"
   , "import qualified Data.Typeable"
-  ] ++ map addType
-  [ "Event", "HTMLElement", "Function" ]
-
-addType :: String -> String
-addType name = "newtype " ++ name ++ " = " ++ name ++ " (GHCJS.JSRef " ++ name ++ ")"
+  ]
 
 noComment :: CommentPlaceholder
 noComment = Right mempty
@@ -159,7 +156,7 @@ renderFunctionType Nothing params result =
   concatMap ((++ " -> ") . renderParameter) params ++ result
 renderFunctionType (Just tparams) params result =
   "forall " ++
-  intercalate " " (map (\(TypeParameter name _) -> name) tparams) ++
+  intercalate " " (map (\(TypeParameter name _) -> mungeLowerName name) tparams) ++
   ". " ++
   renderTypeParametersContext tparams ++
   renderFunctionType Nothing params result
@@ -188,5 +185,5 @@ renderTypeParametersContext tparams =
     [] -> ""
     constraints ->
       "(" ++
-      intercalate ", " (map (\(name, ty) -> name ++ " := " ++ renderType ty) constraints) ++
+      intercalate ", " (map (\(name, ty) -> mungeLowerName name ++ " := " ++ renderType ty) constraints) ++
       ") => "

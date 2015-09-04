@@ -10,11 +10,12 @@ import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>), takeDirectory)
 import Text.Parsec (parse)
 
-ghcjsFromTypeScript :: Config -> FilePath -> IO ()
+ghcjsFromTypeScript :: Config -> FilePath -> IO [ModuleName]
 ghcjsFromTypeScript config fp = do
   parsed <- parseTypeScript fp
   let outputs = render (collect parsed)
   mapM_ (writeOutput config) outputs
+  return (map fst outputs)
 
 parseTypeScript :: FilePath -> IO [DeclarationElement]
 parseTypeScript fp =
@@ -43,7 +44,7 @@ pragmas =
   , "{-# LANGUAGE GeneralizedNewtypeDeriving #-}"
   , "{-# LANGUAGE PolyKinds                  #-}"
   , "{-# LANGUAGE UndecidableInstances       #-}"
-  , "{-# LANGUAGE DatatypeContexts           #-}"
+  , "{-# LANGUAGE RankNTypes                 #-}"
   ]
 
 defaultConfig :: FilePath -> Config

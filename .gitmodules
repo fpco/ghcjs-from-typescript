@@ -2,5 +2,5 @@
 	path = deps/language-typescript
 	url = git://github.com/mgsloan/language-typescript.git
 [submodule "test/DefinitelyTyped"]
-	path = test/DefinitelyTyped
+	path = deps/DefinitelyTyped
 	url = git://github.com/borisyankov/DefinitelyTyped.git

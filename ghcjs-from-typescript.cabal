@@ -42,6 +42,7 @@ test-suite definitely-typed
   main-is:             definitely-typed.hs
   ghc-options:         -Wall
   build-depends:       base == 4.*
-                     , filepath
                      , directory
+                     , filepath
                      , ghcjs-from-typescript
+                     , language-typescript
