@@ -1,11 +1,13 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 module GHCJS.FromTypeScript.Render (render) where
 
 import           Control.Applicative ((<$>))
 import           Data.List (intercalate)
 import qualified Data.Map as M
-import           Data.Maybe (fromMaybe, mapMaybe)
+import           Data.Maybe (fromMaybe, mapMaybe, isNothing)
 import           Data.Monoid (Monoid(..), (<>))
+import qualified Data.Set as S
 import           Debug.Trace (trace)
 import           GHCJS.FromTypeScript.Munge
 import           GHCJS.FromTypeScript.Types
@@ -24,29 +26,35 @@ render =
 renderDecl :: Decl -> [String]
 renderDecl (InterfaceDecl (Interface _ name mtparams mextends body)) =
     [ ""
-    , "newtype " ++ ty ++ " = " ++ munged ++ " (GHCJS.JSRef (" ++ ty ++ "))"
+    , "newtype " ++ ty ++ " = " ++ mungedName ++ " (GHCJS.JSRef (" ++ ty ++ "))"
     , "  deriving (Data.Typeable.Typeable, GHCJS.ToJSRef, GHCJS.FromJSRef)"
     , "type instance TS.Members " ++ ty ++ " =" ++
       case mextends of
         Nothing -> ""
-        Just extends -> " TS.Extends '[" ++ intercalate ", " (map renderTypeRef extends) ++ "]"
-    ] ++ renderTypeBody ty body
+        Just extends -> " TS.Extends '[" ++ intercalate ", " (map (renderTypeRef tvs) extends) ++ "]"
+    ] ++ renderTypeBody tvs tyref body
   where
     --FIXME was done with DatatypeContexts
-    -- ctxt = maybe "" renderTypeParametersContext mtparams
-    munged = mungeUpperName name
-    ty = munged ++
+    -- ctxt = maybe "" renderTypeParametersContext tvs mtparams
+    tvs = maybe mempty paramsToTyVars mtparams
+    mungedName = mungeUpperName name
+    tyref = TypeRef (TypeName Nothing name) $
+      case mtparams of
+        Nothing -> Nothing
+        Just tparams -> Just $
+          map (\(TypeParameter name _) -> TypeReference (TypeRef (TypeName Nothing name) Nothing)) tparams
+    ty = mungedName ++
       case mtparams of
         Nothing -> ""
         Just params -> " " <> intercalate " " (map renderTypeParameterName params)
 
-renderTypeBody :: String -> TypeBody -> [String]
-renderTypeBody ty (TypeBody members) =
+renderTypeBody :: TyVars -> TypeRef -> TypeBody -> [String]
+renderTypeBody tvs tyref (TypeBody members) =
   vert 2
        "('[ "
        "  , "
        "  ])"
-       (map (lines . renderMember ty . snd) members)
+       (map (lines . renderMember tvs tyref . snd) members)
 
 vert :: Int -> String -> String -> String -> [[String]] -> [String]
 vert n leading between end ls =
@@ -61,9 +69,9 @@ vert n leading between end ls =
     indent = replicate n ' '
     bodyLines = map (\x -> indent ++ replicate (length between) ' ' ++ x)
 
-renderMember :: String -> TypeMember -> String
-renderMember _ (PropertySignature name optional mtype) =
-  "'( 'TS.Property " ++ show name ++ ", " ++ renderOptional optional (renderType (maybeAny mtype)) ++ " )"
+renderMember :: TyVars -> TypeRef -> TypeMember -> String
+renderMember tvs _ (PropertySignature name optional mtype) =
+  "'( 'TS.Property " ++ show name ++ ", " ++ renderOptional optional (renderType tvs (maybeAny mtype)) ++ " )"
 -- NOTE: overloading / specialization not yet handled, so this won't
 -- work correctly for that
 --
@@ -71,30 +79,30 @@ renderMember _ (PropertySignature name optional mtype) =
 --
 -- FIXME: should IO be on the return type insead of being implicit?
 -- (if so, awareness of IO would need to be added to ghcjs-typescript)
-renderMember _ (CallSignature plart) =
-  "'( 'TS.Call, " ++ renderPlart plart ++ " )"
-renderMember _ (MethodSignature name optional plart) =
-    "TS." ++ optionalPrefix ++ "Method " ++ show name ++ " (" ++ renderPlart plart ++ ")"
+renderMember tvs _ (CallSignature plart) =
+  "'( 'TS.Call, " ++ renderPlart tvs plart ++ " )"
+renderMember tvs _ (MethodSignature name optional plart) =
+    "TS." ++ optionalPrefix ++ "Method " ++ show name ++ " (" ++ renderPlart tvs plart ++ ")"
   where
     optionalPrefix =
       case optional of
         Just Optional -> "Optional"
         Nothing -> ""
-renderMember ty (ConstructSignature mtparams params mresult) =
-    "'( 'TS.Constructor, " ++ renderFunctionType mtparams params result ++ " )"
+renderMember tvs tyref (ConstructSignature mtparams params mresult) =
+    "'( 'TS.Constructor, " ++ renderFunctionType tvs mtparams params result ++ " )"
   where
     -- FIXME: is it correct to use the type head for the default
     -- constructor return type?
-    result = maybe ty renderType mresult
+    result = fromMaybe (TypeReference tyref) mresult
 -- FIXME: should name be used? doesn't seem needed
-renderMember _ (TypeIndexSignature (IndexSignature _name String ty)) =
-  "'( 'TS.StringIndex, " ++ renderType ty ++ " )"
-renderMember _ (TypeIndexSignature (IndexSignature _name Number ty)) =
-  "'( 'TS.NumericIndex, " ++ renderType ty ++ " )"
+renderMember tvs _ (TypeIndexSignature (IndexSignature _name String ty)) =
+  "'( 'TS.StringIndex, " ++ renderType tvs ty ++ " )"
+renderMember tvs _ (TypeIndexSignature (IndexSignature _name Number ty)) =
+  "'( 'TS.NumericIndex, " ++ renderType tvs ty ++ " )"
 
-renderPlart :: ParameterListAndReturnType -> String
-renderPlart (ParameterListAndReturnType mtparams params mreturn) =
-  renderFunctionType mtparams params (renderType (maybeVoid mreturn))
+renderPlart :: TyVars -> ParameterListAndReturnType -> String
+renderPlart tvs (ParameterListAndReturnType mtparams params mreturn) =
+  renderFunctionType tvs mtparams params (maybeVoid mreturn)
 
 standardImports :: [String]
 standardImports =
@@ -117,60 +125,76 @@ maybeVoid = fromMaybe (Predefined VoidType)
 --------------------------------------------------------------------------------
 -- Render types
 
-renderType :: Type -> String
-renderType ty = case ty of
+newtype TyVars = TyVars { unTyVars :: S.Set String }
+  deriving (Monoid)
+
+paramsToTyVars :: [TypeParameter] -> TyVars
+paramsToTyVars = TyVars . S.fromList . map (\(TypeParameter name _) -> name)
+
+renderType :: TyVars -> Type -> String
+renderType tvs ty = case ty of
   Predefined AnyType -> "TS.Any"
   Predefined NumberType -> "TS.Number"
   Predefined BooleanType -> "TS.Boolean"
   Predefined StringType -> "TS.String"
   Predefined VoidType -> "TS.Void"
-  TypeReference ref -> renderTypeRef ref
-  ObjectType body -> unlines $ "TS.Object" : renderTypeBody (error "should be unused") body
-  ArrayType ty -> "TS.Array (" ++ renderType ty ++ ")"
-  UnionType t1 t2 -> "(" ++ renderType t1 ++ ") :|: (" ++ renderType t2 ++ ")"
-  TupleType ts -> "(" ++ intercalate ", " (map renderType ts) ++ ")"
+  TypeReference ref -> renderTypeRef tvs ref
+  ObjectType body -> unlines $ "TS.Object" : renderTypeBody tvs (error "should be unused") body
+  ArrayType ty -> "TS.Array (" ++ renderType tvs ty ++ ")"
+  UnionType t1 t2 -> "(" ++ renderType tvs t1 ++ ") :|: (" ++ renderType tvs t2 ++ ")"
+  TupleType ts -> "(" ++ intercalate ", " (map (renderType tvs) ts) ++ ")"
   FunctionType mtparams params result ->
-    "(" ++ renderFunctionType mtparams params (renderType result) ++ ")"
+    "(" ++ renderFunctionType tvs mtparams params result ++ ")"
   ConstructorType mtparams params result ->
     "TS.Object '[ '( 'TS.Constructor, " ++
-    renderFunctionType mtparams params (renderType result) ++
+    renderFunctionType tvs mtparams params result ++
     " ) ]"
   tq@(TypeQuery{}) ->
     trace ("Skipping " ++ show tq) "TS.Any"
 
-renderTypeRef :: TypeRef -> String
-renderTypeRef (TypeRef name Nothing) =
-    renderTypeName name
-renderTypeRef (TypeRef name (Just params)) =
+renderTypeRef :: TyVars -> TypeRef -> String
+renderTypeRef tvs (TypeRef name Nothing) =
+    renderTypeName tvs name
+renderTypeRef tvs (TypeRef name (Just params)) =
     "(" ++
-    renderTypeName name ++
-    concatMap (\ty -> " (" ++ renderType ty ++ ")") params ++
+    renderTypeName tvs name ++
+    concatMap (\ty -> " (" ++ renderType tvs ty ++ ")") params ++
     ")"
 
-renderTypeName :: TypeName -> String
+renderTypeName :: TyVars -> TypeName -> String
 -- FIXME: use module qualification
-renderTypeName (TypeName mn name) = mungeUpperName name
+renderTypeName tvs (TypeName mn name)
+  | isNothing mn && name `S.member` (unTyVars tvs) = mungeLowerName name
+  | otherwise = mungeUpperName name
 
-renderFunctionType :: Maybe [TypeParameter] -> [Parameter] -> String -> String
-renderFunctionType Nothing params result =
-  concatMap ((++ " -> ") . renderParameter) params ++ result
-renderFunctionType (Just tparams) params result =
-  "forall " ++
-  intercalate " " (map (\(TypeParameter name _) -> mungeLowerName name) tparams) ++
+renderFunctionType
+    :: TyVars
+    -> Maybe [TypeParameter]
+    -> [Parameter]
+    -> Type
+    -> String
+renderFunctionType tvs Nothing params result =
+  concatMap ((++ " -> ") . renderParameter tvs) params ++ renderType tvs result
+renderFunctionType tvs (Just tparams) params result =
+  "TS.Any {- forall " ++
+  intercalate " " (map renderTypeParameterName tparams) ++
   ". " ++
-  renderTypeParametersContext tparams ++
-  renderFunctionType Nothing params result
+  renderTypeParametersContext tvs' tparams ++
+  renderFunctionType tvs' Nothing params result ++
+  " -}"
+  where
+    tvs' = tvs <> paramsToTyVars tparams
 
-renderParameter :: Parameter -> String
-renderParameter (RequiredOrOptionalParameter _ _ optional mtype) =
-  renderOptional optional (renderParameterType mtype)
-renderParameter (RestParameter _ mtype) =
-  "TS.Rest (" ++ renderType (maybeAny mtype) ++ ")"
+renderParameter :: TyVars -> Parameter -> String
+renderParameter tvs (RequiredOrOptionalParameter _ _ optional mtype) =
+  renderOptional optional (renderParameterType tvs mtype)
+renderParameter tvs (RestParameter _ mtype) =
+  "TS.Rest (" ++ renderType tvs (maybeAny mtype) ++ ")"
 
-renderParameterType :: Maybe ParameterType -> String
-renderParameterType Nothing = renderType (Predefined AnyType)
-renderParameterType (Just (ParameterType ty)) = renderType ty
-renderParameterType (Just (ParameterSpecialized str)) = "TS.Specialize " ++ show str
+renderParameterType :: TyVars -> Maybe ParameterType -> String
+renderParameterType tvs Nothing = renderType tvs (Predefined AnyType)
+renderParameterType tvs (Just (ParameterType ty)) = renderType tvs ty
+renderParameterType tvs (Just (ParameterSpecialized str)) = "TS.Specialize " ++ show str
 
 renderOptional :: Maybe Optional -> String -> String
 renderOptional Nothing xs = xs
@@ -179,11 +203,11 @@ renderOptional (Just Optional) xs = "TS.Optional (" ++ xs ++ ")"
 renderTypeParameterName :: TypeParameter -> String
 renderTypeParameterName (TypeParameter name _) = mungeLowerName name
 
-renderTypeParametersContext :: [TypeParameter] -> String
-renderTypeParametersContext tparams =
+renderTypeParametersContext :: TyVars -> [TypeParameter] -> String
+renderTypeParametersContext tvs tparams =
   case mapMaybe (\(TypeParameter name mty) -> (name, ) <$> mty) tparams of
     [] -> ""
     constraints ->
       "(" ++
-      intercalate ", " (map (\(name, ty) -> mungeLowerName name ++ " := " ++ renderType ty) constraints) ++
+      intercalate ", " (map (\(name, ty) -> mungeLowerName name ++ " TS.:= " ++ renderType tvs ty) constraints) ++
       ") => "
