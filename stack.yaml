@@ -4,4 +4,4 @@ packages:
   - deps/language-typescript
 extra-deps:
   - unicode-properties-3.2.0.0
-resolver: lts-2.14
+resolver: lts-3.4
