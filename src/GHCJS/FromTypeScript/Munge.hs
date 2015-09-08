@@ -9,7 +9,7 @@ module GHCJS.FromTypeScript.Munge
   , moduleNamePath
   ) where
 
-import Data.Char (toUpper, toLower, isAlpha)
+import Data.Char (toUpper, toLower, isAlpha, isNumber)
 import Data.List (intercalate)
 import Data.Monoid
 import Data.Typeable
@@ -37,11 +37,11 @@ mungeName = defaultForEmpty . avoidKeywords . onlyValidIdentifiers
     defaultForEmpty x = x
     onlyValidIdentifiers [] = []
     onlyValidIdentifiers (x:xs)
-      | isAlpha x = toLower x : onlyValidIdentifiers' xs
+      | isAlpha x = x : onlyValidIdentifiers' xs
       | otherwise = onlyValidIdentifiers xs
     onlyValidIdentifiers' [] = []
     onlyValidIdentifiers' (x:xs)
-      | isAlpha x = x : onlyValidIdentifiers' xs
+      | isAlpha x || isNumber x = x : onlyValidIdentifiers' xs
       | otherwise = onlyValidIdentifiers' xs
 
 --FIXME: If both "type" and "type_" exist, then this will cause the
