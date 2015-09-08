@@ -39,12 +39,13 @@ pragmas =
   , "{-# LANGUAGE DataKinds                  #-}"
   , "{-# LANGUAGE FlexibleContexts           #-}"
   , "{-# LANGUAGE FlexibleInstances          #-}"
+  , "{-# LANGUAGE GeneralizedNewtypeDeriving #-}"
+  , "{-# LANGUAGE NoImplicitPrelude          #-}"
+  , "{-# LANGUAGE PolyKinds                  #-}"
+  , "{-# LANGUAGE RankNTypes                 #-}"
   , "{-# LANGUAGE TypeFamilies               #-}"
   , "{-# LANGUAGE TypeOperators              #-}"
-  , "{-# LANGUAGE GeneralizedNewtypeDeriving #-}"
-  , "{-# LANGUAGE PolyKinds                  #-}"
   , "{-# LANGUAGE UndecidableInstances       #-}"
-  , "{-# LANGUAGE RankNTypes                 #-}"
   ]
 
 defaultConfig :: FilePath -> Config
