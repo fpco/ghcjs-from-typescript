@@ -5,7 +5,7 @@ module GHCJS.FromTypeScript.Render (render) where
 import           Control.Applicative ((<$>))
 import           Data.List (intercalate)
 import qualified Data.Map as M
-import           Data.Maybe (fromMaybe, mapMaybe, isNothing)
+import           Data.Maybe
 import           Data.Monoid (Monoid(..), (<>))
 import qualified Data.Set as S
 import           Debug.Trace (trace)
@@ -71,7 +71,8 @@ vert n leading between end ls =
 
 renderMember :: TyVars -> TypeRef -> TypeMember -> String
 renderMember tvs _ (PropertySignature name optional mtype) =
-  "'( 'TS.Property " ++ show name ++ ", " ++ renderOptional optional (renderType tvs (maybeAny mtype)) ++ " )"
+  show name ++ " ::" ++ (if isJust optional then "? " else ": ") ++
+  renderType tvs (maybeAny mtype)
 -- NOTE: overloading / specialization not yet handled, so this won't
 -- work correctly for that
 --
@@ -79,26 +80,22 @@ renderMember tvs _ (PropertySignature name optional mtype) =
 --
 -- FIXME: should IO be on the return type insead of being implicit?
 -- (if so, awareness of IO would need to be added to ghcjs-typescript)
-renderMember tvs _ (CallSignature plart) =
-  "'( 'TS.Call, " ++ renderPlart tvs plart ++ " )"
 renderMember tvs _ (MethodSignature name optional plart) =
-    "TS." ++ optionalPrefix ++ "Method " ++ show name ++ " (" ++ renderPlart tvs plart ++ ")"
-  where
-    optionalPrefix =
-      case optional of
-        Just Optional -> "Optional"
-        Nothing -> ""
+  show name ++ " ::" ++ (if isJust optional then "? " else ": ") ++
+  "TS.Fun (" ++ renderPlart tvs plart ++ ")"
+renderMember tvs _ (CallSignature plart) =
+  "TS.Call (" ++ renderPlart tvs plart ++ ")"
 renderMember tvs tyref (ConstructSignature mtparams params mresult) =
-    "'( 'TS.Constructor, " ++ renderFunctionType tvs mtparams params result ++ " )"
-  where
-    -- FIXME: is it correct to use the type head for the default
-    -- constructor return type?
-    result = fromMaybe (TypeReference tyref) mresult
+  "TS.Constructor (" ++
+  -- FIXME: is it correct to use the type head for the default
+  -- constructor return type?
+  renderFunctionType tvs mtparams params (fromMaybe (TypeReference tyref) mresult) ++
+  ")"
 -- FIXME: should name be used? doesn't seem needed
 renderMember tvs _ (TypeIndexSignature (IndexSignature _name String ty)) =
-  "'( 'TS.StringIndex, " ++ renderType tvs ty ++ " )"
+  "TS.StringIndex (" ++ renderType tvs ty ++ ")"
 renderMember tvs _ (TypeIndexSignature (IndexSignature _name Number ty)) =
-  "'( 'TS.NumericIndex, " ++ renderType tvs ty ++ " )"
+  "TS.NumericIndex (" ++ renderType tvs ty ++ ")"
 
 renderPlart :: TyVars -> ParameterListAndReturnType -> String
 renderPlart tvs (ParameterListAndReturnType mtparams params mreturn) =
@@ -106,12 +103,16 @@ renderPlart tvs (ParameterListAndReturnType mtparams params mreturn) =
 
 standardImports :: [String]
 standardImports =
-  [ "import qualified GHCJS.TypeScript.Types as TS"
-  , "import GHCJS.TypeScript.Types ((:|:))"
+  [ "import qualified GHCJS.TypeScript as TS"
+  , "import GHCJS.TypeScript (type (:|:), type (:::), type (::?))"
   , "import qualified GHCJS.Marshal as GHCJS"
   , "import qualified GHCJS.Types as GHCJS"
   , "import qualified Data.Typeable"
-  ]
+  ] ++ map addType
+  [ "EventListenerOrEventListenerObject" ]
+
+addType :: String -> String
+addType name = "newtype " ++ name ++ " = " ++ name ++ " (GHCJS.JSRef " ++ name ++ ")"
 
 noComment :: CommentPlaceholder
 noComment = Right mempty
@@ -139,16 +140,16 @@ renderType tvs ty = case ty of
   Predefined StringType -> "TS.String"
   Predefined VoidType -> "TS.Void"
   TypeReference ref -> renderTypeRef tvs ref
-  ObjectType body -> unlines $ "TS.Object" : renderTypeBody tvs (error "should be unused") body
-  ArrayType ty -> "TS.Array (" ++ renderType tvs ty ++ ")"
-  UnionType t1 t2 -> "(" ++ renderType tvs t1 ++ ") :|: (" ++ renderType tvs t2 ++ ")"
+  ObjectType body -> unlines $ "TS.Obj" : renderTypeBody tvs (error "should be unused") body
+  ArrayType ty -> "(TS.Array " ++ renderType tvs ty ++ ")"
+  UnionType t1 t2 -> "(" ++ renderType tvs t1 ++ " :|: " ++ renderType tvs t2 ++ ")"
   TupleType ts -> "(" ++ intercalate ", " (map (renderType tvs) ts) ++ ")"
   FunctionType mtparams params result ->
     "(" ++ renderFunctionType tvs mtparams params result ++ ")"
   ConstructorType mtparams params result ->
-    "TS.Object '[ '( 'TS.Constructor, " ++
+    "TS.Obj '[TS.Constructor " ++
     renderFunctionType tvs mtparams params result ++
-    " ) ]"
+    "]"
   tq@(TypeQuery{}) ->
     trace ("Skipping " ++ show tq) "TS.Any"
 
@@ -199,6 +200,10 @@ renderParameterType tvs (Just (ParameterSpecialized str)) = "TS.Specialize " ++ 
 renderOptional :: Maybe Optional -> String -> String
 renderOptional Nothing xs = xs
 renderOptional (Just Optional) xs = "TS.Optional (" ++ xs ++ ")"
+
+optionalPrefix :: Maybe Optional -> String
+optionalPrefix (Just Optional) = "Optional"
+optionalPrefix Nothing = ""
 
 renderTypeParameterName :: TypeParameter -> String
 renderTypeParameterName (TypeParameter name _) = mungeLowerName name
